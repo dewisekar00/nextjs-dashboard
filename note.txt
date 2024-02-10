@@ -1,0 +1,222 @@
+1. routing dengan folder:
+caranya:
+root utama: app --> /
+setiap folder yang mau dijadikan route ditambahkan page.tsx dan layout.tsx
+--> buat route dashboard didalam route utama:
+   a.buat folder didalam app, dan tambahkan page.tsx
+   cth: folder dashboard --> /dashboard
+   b.didalamnya bisa ada route lagi dengan menambahkan page.tsx:
+   cth: folder customers --> /dashboard/customers
+
+2.penjelasan fungsi folder:
+
+ --> app: Contains all the routes, components, and logic for your application, this is where you'll be mostly working from.
+
+--> page.tsx : berisi isinya
+--> layout.tsx berisi tata letak
+cth: kiri: sidenav , atas: navbar 
+
+
+
+
+ ___ lib ____
+ --> /app/lib: Contains functions used in your application, such as reusable utility functions and data fetching functions.
+ --> /app/lib/data.ts: func untuk get data sesuai yang diinginkan, atau 
+ untuk get/filter datatabase dengan query sql
+ --> /app/lib/definition.ts: template type dengan ts yang berisi type dan tipe datanya yang akan digunakan di data.ts
+ --> /app/lib/placeholder-data.js: untuk simpan hasil data
+
+ ____ UI ____ :  Contains all the UI components for your application
+
+ ____public____ : Contains all the static assets for your application, such as images
+
+____ /scripts ___ : Contains a seeding script that you'll use to populate your database
+--> seed.js : berisi create table sql juga kemana datanya mau di insert/ditambahkan
+
+
+DATA FLOW:
+
+--create table dan insert di dalam seed
+--buat func yang dibutuhkan di data.ts dengan template type dari definition.ts agar data nya sesuai
+--gunain di component dengan memanggil func yang diinginkan
+
+
+3.Kalo udah buat datanya, dan udah ada datanya terus sekarang cara nampilin di componentnya gimana?
+
+--> di data.ts ada func untuk get data dari database
+--> kalo mau tampilin datanya di component tinggal panggil nama func nya 
+cth: 
+ a.simpan di var dulu
+ const latestInvoices = await fetchLatestInvoices()
+ b.baru masukin di component
+ <LatestInvoices latestInvoices={latestInvoices} /> 
+
+
+
+4.Making dashboard dynamic :With dynamic rendering, your application is only as fast as your slowest data fetch.
+noStore for dynamic rendering
+--> unstable_noStore inside your Server Components or data fetching functions to opt out of static rendering.
+
+
+
+Chapter 9:
+how you can improve the user experience when there are slow data requests.
+
+
+a.with streaming:  data transfer technique that allows you to break down a route into smaller "chunks" and progressively stream them from the server to the client as they become ready.
+
+--> loading.tsx is a special Next.js file built on top of Suspense, it allows you to create fallback UI to show as a replacement while page content loads.
+--> Since <component> is static, it's shown immediately. The user can interact with <component> while the dynamic content is loading.
+--> The user doesn't have to wait for the page to finish loading before navigating away (this is called interruptable navigation).
+
+jadi kita bisa tambahkan loading dengan file loading.tsx untuk kasih UI kalo datanya itu masih diget,jadi sembari nunggu user bisa pake component static cthnya Navbar untuk dimainin dulu
+
+b.with Suspense: nah kalo pake ini, kita bisa kasih loading untuk component nya itu sendiri sendiri,kalo pake streaming kan semuanya kita kasih loading jadi nunggu dulu yang lain selesai baru ditampilkan bareng bareng,
+dengan Suspense kita bisa kasih loading sendiri sendiri untuk tiap componentnya , jadinya ngga perlu nunggu yang lain dulu baru tampil.
+
+caranya:
+
+--> func yang memanggil data di data.ts dikasih ini dulu  noStore(); agar menjadi dynamic
+--> component dibungkus didalam <Suspense> ditambah fallback berisi skeleton / kerangka UI loading
+
+ <Suspense fallback={<RevenueChartSkeleton />}>
+          <RevenueChart />
+        </Suspense>
+
+
+--> func untuk fetch datanya ditaruh langsung di UInya:
+
+  const revenue = await fetchRevenue();
+
+note:Suspense bisa ditaruh di component yang lama get Datanya
+
+Where you place your suspense boundaries will vary depending on your application. In general, it's good practice to move your data fetches down to the components that need it, and then wrap those components in Suspense. But there is nothing wrong with streaming the sections or the whole page if that's what your application needs.
+
+Where you place your Suspense boundaries will depend on a few things:
+
+-How you want the user to experience the page as it streams.
+-What content you want to prioritize.
+-If the components rely on data fetching.
+
+By moving data fetching down to the components that need it, you can create more granular Suspense boundaries. This allows you to stream specific components and prevent the UI from blocking.
+
+Streaming and Server Components give us new ways to handle data fetching and loading states, ultimately with the goal of improving the end user experience.
+
+NOTE:
+It's worth noting that wrapping a component in Suspense doesn't make the component itself dynamic (remember you used unstable_noStore to achieve this behavior), but rather Suspense is used as a boundary between the static and dynamic parts of your route.
+
+
+Chapter 11:
+
+adding search and pagination.
+
+--> Dapetin value inputan dari user
+--> Update URL dengan search params
+--> Keep the URL in sync with the input field.
+--> Update the table to reflect the search query.
+
+> URL search params to manage the search state,Web API that provides utility methods for manipulating the URL query parameters. 
+
+> const searchParams = useSearchParams() =
+-fungsi yang memungkinkan kamu untuk mengakses parameter-parameter yang ada pada URL saat ini
+-Parameter URL adalah bagian dari URL yang dimulai setelah tanda tanya (?) 
+
+
+> const pathname = usePathname() = Lets you read the current URL's pathname.
+const { replace } = useRouter();
+
+
+That's right! Debouncing prevents a new database query on every keystroke, thus saving resources.
+
+Here are the steps you'll take to create a new invoice:
+
+Create a form to capture the user's input.
+Create a Server Action and invoke it from the form.
+Inside your Server Action, extract the data from the formData object.
+Validate and prepare the data to be inserted into your database.
+Insert the data and handle any errors.
+Revalidate the cache and redirect the user back to invoices page.
+
+
+
+
+Chapter 12:
+
+Mutating data with server action
+server action: allow you to run asynchronous code directly on the server.
+
+
+--> Create:
+
+> buat folder create dan file page.tsx didalam invoice untuk buat tambahan route
+http://localhost:3000/dashboard/invoices/create
+> buat server action : ini kaya logic untuk manipulating data
+a.Validate data
+b.Prepare data for insertion into the database
+c. Insert data into the database
+d. Revalidate the cache for the invoices page and redirect the user (not working)
+
+> panggil action servernya didalam form
+<form action={createInvoice}>
+
+{
+  ____urutan dari doc_____
+
+> Create a form to capture the user's input.
+> Create a Server Action and invoke it from the form.
+> Inside your Server Action, extract the data from the formData object.
+> Validate and prepare the data to be inserted into your database.
+> Insert the data and handle any errors.
+Revalidate the cache and redirect the user back to invoices page.
+
+}
+
+--> Update
+http://localhost:3000/dashboard/invoices/db0549c6-6086-4009-b8bf-0071d346c54a/edit
+
+UUIDs vs. Auto-incrementing Keys
+
+note: We use UUIDs instead of incrementing keys (e.g., 1, 2, 3, etc.). This makes the URL longer; however, UUIDs eliminate the risk of ID collision, are globally unique, and reduce the risk of enumeration attacks - making them ideal for large databases.
+
+However, if you prefer cleaner URLs, you might prefer to use auto-incrementing keys.
+
+
+
+[code flow CRUD Next js]
+
+1.buat file route : didalamnya ada page yang berisi component/kerangka page
+2.di folder lib buat file action.ts yang berisi logic/action/server action untuk CRUD ke database
+3.kirim action ke form
+cth:  <form action={updateInvoiceWithId}>
+
+
+
+Chapter 13:
+Handling errors
+- error.tsx : `error.tsx` file serves as a catch-all for unexpected errors and allows you to display a fallback UI to your users.
+- not-found.tsx : for spesific file , for ex: error for edit invoice
+
+
+
+Chapter 15:
+
+Adding Authentication
+
+> Buat login route
+> using NextAuth.js to add authentication to your application
+> Setting up NextAuth.js:
+install
+generate a secret key: openssl rand -base64 32
+add to .env : AUTH_SECRET=your-secret-key
+
+> Create an auth.config.ts file at the root for configuration
+>  import the authConfig object into a Middleware file. In the root
+middleware.ts
+> Create a new file called auth.ts that spreads your authConfig object
+> Now you need to connect the auth logic with your login form. In your actions.ts file, create a new action called authenticate. This action should import the signIn function from auth.ts:
+
+> Finally, in your login-form.tsx component, you can use React's useFormState to call the server action and handle form errors, and use useFormStatus to handle the pending state of the form:
+
+
+Email: user@nextmail.com
+Password: 123456
